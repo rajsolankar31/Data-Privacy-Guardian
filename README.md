@@ -3,6 +3,7 @@
 A local-first data privacy analysis, risk assessment, and data protection platform.
 
 ---
+*LIVE LINK: https://data-privacy-guardian-rajsolankar31.streamlit.app/
 
 ## 📌 Overview
 
