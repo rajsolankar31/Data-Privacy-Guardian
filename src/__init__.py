@@ -10,6 +10,7 @@ from .protection import (
 from .privacy_risk import calculate_risk_assessment
 from .utility_assessment import evaluate_utility
 from .reporting import generate_markdown_report
+from .document_scanner import scan_document, mask_evidence
 
 __all__ = [
     "detect_sensitive_data",
@@ -23,4 +24,6 @@ __all__ = [
     "calculate_risk_assessment",
     "evaluate_utility",
     "generate_markdown_report",
+    "scan_document",
+    "mask_evidence",
 ]
