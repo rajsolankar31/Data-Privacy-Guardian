@@ -1,0 +1,110 @@
+[
+  {
+    "scan_id": "SCAN_20261015_105250",
+    "timestamp": "2026-10-15 10:52:50",
+    "source_name": "test_dataset.csv",
+    "source_type": "Tabular",
+    "total_findings": 5,
+    "risk_score": 25.5,
+    "status": "Completed"
+  },
+  {
+    "scan_id": "SCAN_20261015_081230",
+    "timestamp": "2026-10-15 08:12:30",
+    "source_name": "test_dataset.csv",
+    "source_type": "Tabular",
+    "total_findings": 5,
+    "risk_score": 25.5,
+    "status": "Completed"
+  },
+  {
+    "scan_id": "SCAN_20261011_020829",
+    "timestamp": "2026-10-11 02:08:29",
+    "source_name": "test_dataset.csv",
+    "source_type": "Tabular",
+    "total_findings": 5,
+    "risk_score": 25.5,
+    "status": "Completed"
+  },
+  {
+    "scan_id": "SCAN_20261011_015952",
+    "timestamp": "2026-10-11 01:59:52",
+    "source_name": "test_dataset.csv",
+    "source_type": "Tabular",
+    "total_findings": 5,
+    "risk_score": 25.5,
+    "status": "Completed"
+  },
+  {
+    "scan_id": "SCAN_20261011_014037",
+    "timestamp": "2026-10-11 01:40:37",
+    "source_name": "test_dataset.csv",
+    "source_type": "Tabular",
+    "total_findings": 5,
+    "risk_score": 25.5,
+    "status": "Completed"
+  },
+  {
+    "scan_id": "SCAN_20261011_012757",
+    "timestamp": "2026-10-11 01:27:57",
+    "source_name": "test_dataset.csv",
+    "source_type": "Tabular",
+    "total_findings": 5,
+    "risk_score": 25.5,
+    "status": "Completed"
+  },
+  {
+    "scan_id": "SCAN_20261011_012508",
+    "timestamp": "2026-10-11 01:25:08",
+    "source_name": "test_dataset.csv",
+    "source_type": "Tabular",
+    "total_findings": 5,
+    "risk_score": 25.5,
+    "status": "Completed"
+  },
+  {
+    "scan_id": "SCAN_20261011_011855",
+    "timestamp": "2026-10-11 01:18:55",
+    "source_name": "test_dataset.csv",
+    "source_type": "Tabular",
+    "total_findings": 5,
+    "risk_score": 25.5,
+    "status": "Completed"
+  },
+  {
+    "scan_id": "SCAN_20261011_011832",
+    "timestamp": "2026-10-11 01:18:32",
+    "source_name": "test_dataset.csv",
+    "source_type": "Tabular",
+    "total_findings": 5,
+    "risk_score": 25.5,
+    "status": "Completed"
+  },
+  {
+    "scan_id": "SCAN_20261011_011154",
+    "timestamp": "2026-10-11 01:11:54",
+    "source_name": "test_dataset.csv",
+    "source_type": "Tabular",
+    "total_findings": 5,
+    "risk_score": 25.5,
+    "status": "Completed"
+  },
+  {
+    "scan_id": "SCAN_20261011_011039",
+    "timestamp": "2026-10-11 01:10:39",
+    "source_name": "test_dataset.csv",
+    "source_type": "Tabular",
+    "total_findings": 5,
+    "risk_score": 25.5,
+    "status": "Completed"
+  },
+  {
+    "scan_id": "SCAN_20261011_010958",
+    "timestamp": "2026-10-11 01:09:58",
+    "source_name": "test_dataset.csv",
+    "source_type": "Tabular",
+    "total_findings": 5,
+    "risk_score": 25.5,
+    "status": "Completed"
+  }
+]

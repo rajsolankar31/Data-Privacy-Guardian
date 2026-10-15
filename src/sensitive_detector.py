@@ -1,34 +1,44 @@
 import re
+import math
 import pandas as pd
 import numpy as np
+from typing import Dict, Any, List, Optional, Tuple
 
-# Column categorization dictionaries with expanded heuristics
+# Comprehensive Semantic Category Mapping
 COLUMN_CATEGORIES = {
-    "Email": ["email", "e_mail", "mail_id", "email_address"],
-    "Phone Number": ["phone", "mobile", "telephone", "contact_no", "contact_number", "cell"],
-    "Name": ["name", "full_name", "first_name", "last_name", "fname", "lname", "customer_name", "patient_name", "employee_name"],
+    "Email": [
+        "email", "e_mail", "mail_id", "email_address", "electronic_mail", "user_email", "contact_email"
+    ],
+    "Phone Number": [
+        "phone", "mobile", "telephone", "contact_no", "contact_number", "cell", "cell_phone", "tel_no"
+    ],
+    "Name": [
+        "name", "full_name", "first_name", "last_name", "fname", "lname", "customer_name",
+        "patient_name", "employee_name", "client_name", "sur_name", "middle_name"
+    ],
     "Financial Information": [
         "salary", "income", "bank_account", "account_number", "acc_no", "credit_card",
-        "card_number", "cvv", "payment", "iban", "swift", "routing_number", "balance"
+        "card_number", "cvv", "payment", "iban", "swift", "routing_number", "balance",
+        "net_worth", "wage", "compensation", "revenue"
     ],
     "Government ID": [
         "aadhaar", "aadhar", "passport", "national_id", "tax_id", "pan_number", "ssn",
-        "social_security", "voter_id", "driving_license", "dl_number"
+        "social_security", "voter_id", "driving_license", "dl_number", "tin", "ein"
     ],
     "Location": [
         "address", "street", "postal_code", "zip_code", "zip", "pincode", "latitude", "lat",
-        "longitude", "long", "lon", "city", "state", "country"
+        "longitude", "long", "lon", "city", "state", "country", "province", "geo"
     ],
     "Health Information": [
         "diagnosis", "medical", "health", "patient", "prescription", "blood_group",
-        "disease", "condition", "treatment", "doctor"
+        "disease", "condition", "treatment", "doctor", "clinical", "medication", "symptom"
     ],
     "Demographics": [
         "age", "gender", "sex", "race", "ethnicity", "religion", "marital_status", "dob", "birth_date"
     ],
 }
 
-# Regex patterns for value-level inspection
+# Regex Patterns for Value-Level Inspection
 PATTERNS = {
     "Email": re.compile(
         r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
@@ -53,7 +63,6 @@ PATTERNS = {
     ),
 }
 
-# Classification of categories into Privacy Roles
 CATEGORY_ROLE_MAP = {
     "Email": "Direct Identifier",
     "Phone Number": "Direct Identifier",
@@ -71,82 +80,120 @@ CATEGORY_ROLE_MAP = {
 }
 
 
-def classify_column(column_name: str):
-    """Classifies a column by its name heuristics."""
+def compute_shannon_entropy(series: pd.Series) -> float:
+    """Calculates Shannon entropy of non-null string values to measure randomness / uniqueness."""
+    clean = series.dropna().astype(str)
+    if len(clean) == 0:
+        return 0.0
+    val_counts = clean.value_counts()
+    n = len(clean)
+    probs = val_counts / n
+    return -sum(p * math.log2(p) for p in probs if p > 0)
+
+
+def classify_column(column_name: str) -> Optional[str]:
+    """Semantic heuristic classifier using token matching and word boundaries."""
     normalized = str(column_name).lower().strip()
     normalized = re.sub(r"[^a-z0-9]+", "_", normalized)
 
+    tokens = set(normalized.split("_"))
     for category, keywords in COLUMN_CATEGORIES.items():
         for keyword in keywords:
-            # Check exact match or tokenized substring
-            tokens = normalized.split("_")
-            if keyword in tokens or normalized == keyword:
+            if keyword in tokens or normalized == keyword or f"_{keyword}_" in f"_{normalized}_":
                 return category
     return None
 
 
-def detect_sensitive_data(df: pd.DataFrame, sample_size: int = 500) -> pd.DataFrame:
+def detect_sensitive_data(df: pd.DataFrame, sample_size: int = 1000) -> pd.DataFrame:
     """
-    Analyzes dataframe columns and values to detect sensitive information.
-    Differentiates between Direct Identifiers, Quasi-Identifiers, and Sensitive Attributes.
+    High-Performance, Multi-Tier Sensitive Data Discovery:
+    Tier 1: Column semantics & token categorization
+    Tier 2: Value-level regex pattern recognition with confidence scoring
+    Tier 3: Statistical distribution & uniqueness profiling (unmasking primary keys and candidate identifiers)
     """
     findings = []
-    
+
     if df.empty:
         return pd.DataFrame(columns=[
             "Column", "Category", "Role", "Detection Method",
-            "Matched Values", "Confidence", "Evidence"
+            "Matched Values", "Confidence", "Evidence", "Actionable Recommendation"
         ])
 
     sample_df = df.head(sample_size) if len(df) > sample_size else df
+    total_rows = len(df)
 
     for column in df.columns:
-        column_name = str(column)
-        col_category = classify_column(column_name)
+        col_name = str(column)
+        col_category = classify_column(col_name)
         non_null_count = int(df[column].notna().sum())
-        
-        # 1. Column name check
+        clean_sample = sample_df[column].dropna().astype(str).str.strip()
+
+        # Tier 1: Semantic Column Classification
         if col_category:
             role = CATEGORY_ROLE_MAP.get(col_category, "Quasi-Identifier")
+            conf = "High" if col_category in ["Email", "Phone Number", "Government ID"] else "Medium"
             findings.append({
-                "Column": column_name,
+                "Column": col_name,
                 "Category": col_category,
                 "Role": role,
-                "Detection Method": "Column name",
+                "Detection Method": "Semantic Column Header",
                 "Matched Values": non_null_count,
-                "Confidence": "High" if col_category in ["Email", "Phone Number", "Government ID"] else "Medium",
-                "Evidence": f"Column name matches known keywords for '{col_category}'."
+                "Confidence": conf,
+                "Evidence": f"Header matches semantic patterns for '{col_category}'.",
+                "Actionable Recommendation": (
+                    "Apply Redaction or Masking" if role == "Direct Identifier" else
+                    "Generalize/Bin values" if role == "Quasi-Identifier" else
+                    "Apply Differential Privacy or Range Generalization"
+                )
             })
 
-        # 2. Pattern-based check on sampled string values
-        clean_sample = sample_df[column].dropna().astype(str).str.strip()
         if len(clean_sample) == 0:
             continue
 
+        # Tier 2: Deep Pattern Matching across string sample
         for pat_name, pat_regex in PATTERNS.items():
-            matches = clean_sample.apply(lambda val: bool(pat_regex.match(val)))
+            matches = clean_sample.apply(lambda val: bool(pat_regex.search(val)))
             match_count = int(matches.sum())
             ratio = match_count / len(clean_sample)
 
-            if ratio >= 0.1:  # At least 10% match pattern
+            if ratio >= 0.05: # At least 5% of sample values match format
                 estimated_total = int(ratio * non_null_count)
                 role = CATEGORY_ROLE_MAP.get(pat_name, "Direct Identifier")
-                
-                # Check if already found under exact same category
+                conf_level = "Very High" if ratio > 0.4 else "High"
+
                 already = any(
-                    f["Column"] == column_name and f["Category"] == pat_name 
+                    f["Column"] == col_name and f["Category"] == pat_name 
                     for f in findings
                 )
                 if not already:
                     findings.append({
-                        "Column": column_name,
+                        "Column": col_name,
                         "Category": pat_name,
                         "Role": role,
-                        "Detection Method": "Value pattern",
+                        "Detection Method": "Value Pattern Recognition",
                         "Matched Values": estimated_total,
-                        "Confidence": "Very High" if ratio > 0.5 else "High",
-                        "Evidence": f"{match_count}/{len(clean_sample)} sampled values ({ratio*100:.1f}%) matched {pat_name} format."
+                        "Confidence": conf_level,
+                        "Evidence": f"{match_count}/{len(clean_sample)} sampled values ({ratio*100:.1f}%) matched '{pat_name}' syntax.",
+                        "Actionable Recommendation": "Sanitize using token masking or cryptographic pseudonymization."
                     })
+
+        # Tier 3: High-Entropy / Primary Key Uniqueness Discovery
+        # If a column is 100% unique or near-100% unique, it poses singling-out / tracker risks
+        if non_null_count > 10 and not any(f["Column"] == col_name for f in findings):
+            unique_ratio = df[column].nunique(dropna=True) / max(non_null_count, 1)
+            entropy = compute_shannon_entropy(sample_df[column])
+
+            if unique_ratio > 0.95 and entropy > 3.0:
+                findings.append({
+                    "Column": col_name,
+                    "Category": "Unique Identifier / Tracker",
+                    "Role": "Direct Identifier",
+                    "Detection Method": "Statistical Uniqueness & Entropy",
+                    "Matched Values": non_null_count,
+                    "Confidence": "Medium-High",
+                    "Evidence": f"Extremely high uniqueness ({unique_ratio*100:.1f}%) and entropy ({entropy:.2f}). Acts as a unique record tracker.",
+                    "Actionable Recommendation": "Drop column or apply salted pseudonymization to eliminate linkage."
+                })
 
     return pd.DataFrame(
         findings,
@@ -158,5 +205,6 @@ def detect_sensitive_data(df: pd.DataFrame, sample_size: int = 500) -> pd.DataFr
             "Matched Values",
             "Confidence",
             "Evidence",
+            "Actionable Recommendation"
         ]
     )
