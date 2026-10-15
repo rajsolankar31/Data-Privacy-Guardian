@@ -126,6 +126,10 @@ def apply_protection(
         elif method == "Pseudonymize":
             salt = params.get("salt", "dpg_salt_key")
             protected_df[col] = pseudonymize_values(protected_df[col], salt=salt)
+        elif method == "Differential Privacy":
+            epsilon = params.get("epsilon", 1.0)
+            from .advanced_pets import add_laplace_noise
+            protected_df[col] = add_laplace_noise(protected_df[col], epsilon=epsilon)
 
     if columns_to_drop:
         protected_df = protected_df.drop(columns=columns_to_drop)
