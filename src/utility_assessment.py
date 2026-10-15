@@ -8,20 +8,19 @@ def evaluate_utility(
     protected_df: pd.DataFrame
 ) -> Dict[str, Any]:
     """
-    Advanced Analytical Utility & Statistical Fidelity Engine:
-    - Shape, record completeness, and missingness preservation
-    - Numeric First & Second Order Moments (Mean, Std Dev, Variance, Kurtosis/Skew)
-    - Wasserstein / Kolmogorov-Smirnov Distance Estimation for distribution drift
-    - Categorical Shannon Entropy and Cardinality Diversity retention
-    - Unified Pareto Privacy-Utility Tradeoff Score
+    Evaluates analytical utility preservation between original and protected datasets:
+    - Shape & completeness retention
+    - Numeric distribution metrics (mean, std deviations, relative error)
+    - Categorical entropy / distinct value retention
+    - Overall utility preservation index
     """
     if original_df.empty:
         return {
             "rows_retained_pct": 0.0,
             "columns_retained_pct": 0.0,
             "overall_utility_score": 0.0,
-            "numeric_metrics": pd.DataFrame(),
-            "categorical_metrics": pd.DataFrame(),
+            "numeric_metrics": [],
+            "categorical_metrics": [],
             "summary": "Original dataset is empty."
         }
 
@@ -30,27 +29,26 @@ def evaluate_utility(
 
     numeric_metrics = []
     num_scores = []
-    common_cols = [c for c in original_df.columns if c in protected_df.columns]
 
+    # Common numeric columns present in both datasets
+    common_cols = [c for c in original_df.columns if c in protected_df.columns]
+    
     for col in common_cols:
         orig_s = pd.to_numeric(original_df[col], errors="coerce")
         prot_s = pd.to_numeric(protected_df[col], errors="coerce")
 
         if orig_s.notna().sum() > 2:
             orig_mean = float(orig_s.mean())
-            orig_std = float(orig_s.std()) if len(orig_s.dropna()) > 1 else 0.0
+            orig_std = float(orig_s.std())
             
             if prot_s.notna().sum() > 2:
                 prot_mean = float(prot_s.mean())
-                prot_std = float(prot_s.std()) if len(prot_s.dropna()) > 1 else 0.0
+                prot_std = float(prot_s.std())
                 
                 # Mean Relative Difference
                 mean_diff = abs(orig_mean - prot_mean) / (abs(orig_mean) + 1e-6)
                 score = max(0.0, 100.0 - (mean_diff * 100.0))
                 num_scores.append(score)
-
-                # Distribution Drift Estimation (Normalized Mean Absolute Distance)
-                drift_pct = min(100.0, round(mean_diff * 100, 2))
 
                 numeric_metrics.append({
                     "Column": str(col),
@@ -58,25 +56,22 @@ def evaluate_utility(
                     "Protected Mean": round(prot_mean, 2),
                     "Original Std": round(orig_std, 2),
                     "Protected Std": round(prot_std, 2),
-                    "Distribution Drift": f"{drift_pct}%",
-                    "Fidelity Score": f"{round(score, 1)}%"
+                    "Mean Retention Score": f"{round(score, 1)}%"
                 })
             else:
-                # Transformed into non-numeric (e.g. binned '20-29' or redacted)
-                num_scores.append(70.0) # Grouped/Binned analytical utility preserved
+                # Transformed into non-numeric (e.g. generalized into strings like '20-29' or redacted)
+                num_scores.append(65.0)  # Generalized retains grouped utility
                 numeric_metrics.append({
                     "Column": str(col),
                     "Original Mean": round(orig_mean, 2),
-                    "Protected Mean": "Binned / Generalized",
+                    "Protected Mean": "Transformed / Binned",
                     "Original Std": round(orig_std, 2),
                     "Protected Std": "N/A",
-                    "Distribution Drift": "Binned Ranges",
-                    "Fidelity Score": "70.0% (Grouped)"
+                    "Mean Retention Score": "Binned / Formatted"
                 })
 
     categorical_metrics = []
     cat_scores = []
-
     for col in common_cols:
         orig_s = original_df[col].dropna()
         prot_s = protected_df[col].dropna()
@@ -89,20 +84,20 @@ def evaluate_utility(
             cat_scores.append(ratio)
             categorical_metrics.append({
                 "Column": str(col),
-                "Original Cardinality": orig_unique,
-                "Protected Cardinality": prot_unique,
+                "Original Unique Count": orig_unique,
+                "Protected Unique Count": prot_unique,
                 "Diversity Retention": f"{round(ratio, 1)}%"
             })
 
-    # Weighted Composite Utility Score:
-    # 35% Column Presence, 35% Numerical Moments, 30% Categorical Diversity
+    # Overall Utility Score Calculation
+    # Weight: 40% column retention, 30% numeric retention, 30% categorical diversity
     avg_num_score = float(np.mean(num_scores)) if num_scores else 100.0
     avg_cat_score = float(np.mean(cat_scores)) if cat_scores else 100.0
 
     overall_utility = (
-        (cols_retained * 0.35) +
-        (avg_num_score * 0.35) +
-        (avg_cat_score * 0.30)
+        (cols_retained * 0.4) +
+        (avg_num_score * 0.3) +
+        (avg_cat_score * 0.3)
     )
     overall_utility = min(100.0, max(0.0, round(overall_utility, 1)))
 
