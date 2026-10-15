@@ -1,5 +1,14 @@
 [
   {
+    "scan_id": "SCAN_20261015_105250",
+    "timestamp": "2026-10-15 10:52:50",
+    "source_name": "test_dataset.csv",
+    "source_type": "Tabular",
+    "total_findings": 5,
+    "risk_score": 25.5,
+    "status": "Completed"
+  },
+  {
     "scan_id": "SCAN_20261015_081230",
     "timestamp": "2026-10-15 08:12:30",
     "source_name": "test_dataset.csv",

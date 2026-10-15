@@ -97,93 +97,175 @@ HIDDEN_MODULES = {
 
 MODULE_LIST = [m for m in ALL_MODULES if m not in HIDDEN_MODULES]
 
+# Initialize navigation state
+if "nav_mode_radio" not in st.session_state:
+    st.session_state["nav_mode_radio"] = MODULE_LIST[0]
+elif st.session_state["nav_mode_radio"] not in MODULE_LIST:
+    st.session_state["nav_mode_radio"] = MODULE_LIST[0]
+
+def set_mode(new_mode):
+    st.session_state["nav_mode_radio"] = new_mode
+
 mode = st.sidebar.radio(
-    "Select Operating Module:",
+    "Choose a Privacy Tool:",
     MODULE_LIST,
-    index=0
+    key="nav_mode_radio"
 )
 
-# Render Tactical Sidebar Footer
+# Render Sidebar Footer
 if use_new_ui and UI_AVAILABLE:
     render_sidebar_footer()
 
-# Top SOC Header
+# Top Friendly Header
 if use_new_ui and UI_AVAILABLE:
     clean_name = mode.split(" ", 1)[-1] if " " in mode else mode
     render_soc_header(clean_name)
 
 # ----------------------------------------------------
-# MODE 0: COMMAND CENTER DASHBOARD (Additive SOC Overview)
+# MODE 0: HOMEPAGE / SERVICES OVERVIEW (Simple & Friendly)
 # ----------------------------------------------------
 if mode == "🛡️ Command Center Dashboard":
     from src.audit_history import get_scan_history
     history = get_scan_history()
     
     total_scans = len(history)
-    avg_risk = round(sum(item.get("risk_score", 0.0) for item in history) / total_scans, 1) if total_scans > 0 else 0.0
     total_findings = sum(item.get("total_findings", 0) for item in history) if total_scans > 0 else 0
-    high_threat_scans = sum(1 for item in history if item.get("risk_score", 0.0) >= 65.0)
 
-    # Tactical Metric Cards
-    kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-    kpi1.metric("Total Targets Audited", f"{total_scans:,}")
-    kpi2.metric("Discovered Findings", f"{total_findings:,}")
-    kpi3.metric("Fleet Residual Risk", f"{avg_risk}/100", delta="Acceptable" if avg_risk < 50 else "Elevated", delta_color="inverse")
-    kpi4.metric("High-Exposure Events", f"{high_threat_scans}", delta="Critical" if high_threat_scans > 0 else "Nominal", delta_color="inverse")
-
-    st.markdown("---")
-    
-    # SOC Visual Dashboard
-    chart_col, feed_col = st.columns([1, 1])
-    
-    with chart_col:
-        st.subheader("🎯 Fleet Risk & Target Distribution")
-        if total_scans > 0:
-            type_counts = {}
-            for item in history:
-                stype = item.get("source_type", "Target")
-                type_counts[stype] = type_counts.get(stype, 0) + 1
-            if UI_AVAILABLE:
-                donut_fig = create_category_donut(type_counts)
-                st.plotly_chart(donut_fig, use_container_width=True)
-            else:
-                st.bar_chart(pd.Series(type_counts))
-        else:
-            st.info("No targets scanned yet. Run scans across Tabular, Documents, or URLs to generate fleet metrics.")
-
-    with feed_col:
-        st.subheader("📡 Real-Time Security Audit Stream")
-        if UI_AVAILABLE:
-            render_terminal_feed(history)
-        else:
-            if history:
-                st.dataframe(pd.DataFrame(history).head(5))
-            else:
-                st.caption("No recent security logs.")
-
-    st.markdown("---")
+    # 1. Warm Welcome & Project Overview
     st.markdown("""
-    #### ⚡ Quick Launch Vectors
-    Use the navigation menu on the left to activate air-gapped detection engines:
-    - **Tabular Datasets**: Profile structured CSV/Excel files with Differential Privacy and k-Anonymity.
-    - **Documents & Code**: Deep heuristic & secret inspection for PDF, Word docs, source code, and credentials.
-    - **Photos & Screenshots**: Offline OCR (EasyOCR) and automated visual blackout engine for sensitive imagery.
-    - **Web Links & Trackers**: Audit URLs for trackers, fingerprinting, clickjacking, and hostile attack scripts.
-    - **Relational Databases & Git**: Scan SQLite databases and full repositories without sending a single byte off-premise.
-    """)
+    <div style="background: linear-gradient(135deg, rgba(13, 27, 42, 0.9) 0%, rgba(20, 42, 69, 0.75) 100%); 
+                border: 1px solid #1e3a5f; border-radius: 12px; padding: 22px 24px; margin-bottom: 25px;">
+        <h2 style="color: #ffffff; margin: 0 0 8px 0; font-size: 24px;">Welcome to Data Privacy Guardian</h2>
+        <p style="color: #94a3b8; font-size: 15px; margin: 0 0 14px 0; line-height: 1.6;">
+            Your personal, <b>100% offline & air-gapped data sanitization suite</b>. 
+            Safely detect sensitive info (names, phone numbers, passwords, API keys, medical data) 
+            and automatically clean or mask them before you share files with AI models or teammates. 
+            <b>Nothing you upload ever leaves your computer.</b>
+        </p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <span style="background: rgba(0, 242, 254, 0.12); color: #00f2fe; border: 1px solid rgba(0, 242, 254, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">🔒 Completely Air-Gapped</span>
+            <span style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">⚡ Instant Local Scans</span>
+            <span style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">🛡️ Zero Cloud Egress</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2. Service Options & "What is this for?" Cards
+    st.subheader("🚀 Choose What You Want to Protect")
+    st.write("Click on any tool below or select it from the left menu to start:")
+
+    sc1, sc2 = st.columns(2)
+
+    with sc1:
+        # Service 1: Tabular Datasets
+        st.markdown("""
+        <div style="background: rgba(13, 27, 42, 0.65); border: 1px solid #1e3a5f; border-radius: 10px; padding: 18px; margin-bottom: 16px;">
+            <h4 style="color: #00f2fe; margin: 0 0 6px 0;">📊 1. Tabular Datasets (CSV & Excel)</h4>
+            <p style="color: #cbd5e1; font-size: 13.5px; margin-bottom: 8px;">
+                <b>What it does:</b> Finds customer names, emails, phone numbers, and salaries in spreadsheet files.
+            </p>
+            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 12px;">
+                <b>Best for:</b> Cleaning customer or patient spreadsheets with Differential Privacy or Masking before analysis.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.button("Open Tabular Data Cleaner →", use_container_width=True, key="btn_open_tabular", on_click=set_mode, args=("📊 Tabular Datasets (CSV/Excel)",))
+
+        st.write("")
+
+        # Service 3: Photos & Screenshots
+        st.markdown("""
+        <div style="background: rgba(13, 27, 42, 0.65); border: 1px solid #1e3a5f; border-radius: 10px; padding: 18px; margin-bottom: 16px;">
+            <h4 style="color: #38bdf8; margin: 0 0 6px 0;">🖼️ 3. Photos & Screenshots</h4>
+            <p style="color: #cbd5e1; font-size: 13.5px; margin-bottom: 8px;">
+                <b>What it does:</b> Reads text inside pictures (OCR), blacks out sensitive words, and strips hidden GPS camera data (EXIF).
+            </p>
+            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 12px;">
+                <b>Best for:</b> Redacting ID cards, receipts, or bug screenshots before uploading them anywhere.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.button("Open Photo & Screenshot Redactor →", use_container_width=True, key="btn_open_photos", on_click=set_mode, args=("🖼️ Photos & Screenshots (EXIF / OCR / Redaction)",))
+
+        st.write("")
+
+        # Service 5: Git Repositories
+        st.markdown("""
+        <div style="background: rgba(13, 27, 42, 0.65); border: 1px solid #1e3a5f; border-radius: 10px; padding: 18px; margin-bottom: 16px;">
+            <h4 style="color: #818cf8; margin: 0 0 6px 0;">💻 5. Project Folders & Codebases</h4>
+            <p style="color: #cbd5e1; font-size: 13.5px; margin-bottom: 8px;">
+                <b>What it does:</b> Scans an entire software folder or Git repo for accidentally hardcoded secrets.
+            </p>
+            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 12px;">
+                <b>Best for:</b> Making sure you don't commit secret credentials to GitHub.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.button("Open Codebase & Project Scanner →", use_container_width=True, key="btn_open_repo", on_click=set_mode, args=("💻 Git Repositories & Project Folders",))
+
+    with sc2:
+        # Service 2: Documents & Code Files
+        st.markdown("""
+        <div style="background: rgba(13, 27, 42, 0.65); border: 1px solid #1e3a5f; border-radius: 10px; padding: 18px; margin-bottom: 16px;">
+            <h4 style="color: #10b981; margin: 0 0 6px 0;">📄 2. Documents & Text Files (PDF / Word / TXT)</h4>
+            <p style="color: #cbd5e1; font-size: 13.5px; margin-bottom: 8px;">
+                <b>What it does:</b> Scans PDFs, Word documents, text files, and scripts for passwords and private records.
+            </p>
+            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 12px;">
+                <b>Best for:</b> Redacting confidential contracts or removing secrets from code files before sharing.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.button("Open Document & Secret Scanner →", use_container_width=True, key="btn_open_docs", on_click=set_mode, args=("📄 Documents & Code (PDF/DOCX/TXT/Code)",))
+
+        st.write("")
+
+        # Service 4: Web Links Inspector
+        st.markdown("""
+        <div style="background: rgba(13, 27, 42, 0.65); border: 1px solid #1e3a5f; border-radius: 10px; padding: 18px; margin-bottom: 16px;">
+            <h4 style="color: #f59e0b; margin: 0 0 6px 0;">🌐 4. Web Links & Trackers Inspector</h4>
+            <p style="color: #cbd5e1; font-size: 13.5px; margin-bottom: 8px;">
+                <b>What it does:</b> Inspects web links for tracking IDs (UTM, Facebook/Google click tags) and attack scripts.
+            </p>
+            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 12px;">
+                <b>Best for:</b> Cleaning ugly tracking URLs into safe, private links before clicking or sending.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.button("Open Link & Tracker Inspector →", use_container_width=True, key="btn_open_links", on_click=set_mode, args=("🌐 Web Links, Trackers & Attack Script Inspector",))
+
+        st.write("")
+
+        # Quick Summary Stats Box
+        st.markdown(f"""
+        <div style="background: rgba(13, 27, 42, 0.45); border: 1px dashed #1e3a5f; border-radius: 10px; padding: 16px; text-align: center;">
+            <div style="color: #94a3b8; font-size: 13px; margin-bottom: 4px;">Session Activity</div>
+            <div style="font-size: 20px; font-weight: 700; color: #ffffff;">{total_scans} Scans Completed &bull; {total_findings} Sensitive Items Found</div>
+            <div style="color: #10b981; font-size: 12px; margin-top: 4px;">● System Ready for next task</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.caption("Need help? Choose any service card above or click on the left sidebar to begin.")
 
 # ----------------------------------------------------
 # MODE 1: TABULAR DATASETS (With PETs & Differential Privacy)
 # ----------------------------------------------------
 elif mode == "📊 Tabular Datasets (CSV/Excel)":
-    st.sidebar.subheader("Dataset Ingestion")
-    load_sample = st.sidebar.button("Load Sample Medical/Customer Dataset", use_container_width=True)
+    st.subheader("📊 Tabular Datasets Cleaner")
+    st.write("Scan spreadsheet files (**CSV**, **Excel**) for customer names, emails, phone numbers, and salaries. Automatically mask or redact them before sharing.")
 
-    uploaded_file = st.sidebar.file_uploader(
-        "Upload CSV or Excel file",
-        type=["csv", "xlsx"],
-        help="Upload your dataset to profile sensitive data and test transformations."
-    )
+    # Easy In-Page File Ingestion
+    up_card1, up_card2 = st.columns([3, 2])
+    with up_card1:
+        uploaded_file = st.file_uploader(
+            "📁 Select or Drop a CSV or Excel file:",
+            type=["csv", "xlsx"],
+            help="Your file is processed locally on your device."
+        )
+    with up_card2:
+        st.write("**Or try with test data:**")
+        load_sample = st.button("⚡ Load Demo Medical/Customer Dataset", use_container_width=True)
 
     active_df = None
     file_name = ""

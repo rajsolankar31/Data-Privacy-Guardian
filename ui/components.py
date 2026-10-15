@@ -11,17 +11,23 @@ def render_soc_header(active_module: str = "Command Center"):
     utc_now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     st.markdown(f"""
-    <div class="soc-header">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+    <div class="soc-header" style="padding: 16px 20px; margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div>
-                <div class="soc-title">
-                    <span>🛡️</span> DATA PRIVACY GUARDIAN <span style="color:#00f2fe; font-size: 18px; font-weight:600;">[SOC-COMMAND]</span>
+                <div style="font-size: 24px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+                    <span>🛡️</span> Data Privacy Guardian
                 </div>
-                <div class="soc-badge">● AIR-GAPPED &bull; LOCAL PRIVACY DEFENSE &bull; {active_module.upper()}</div>
+                <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">
+                    Local & Air-Gapped Privacy Engine &bull; <span style="color: #00f2fe; font-weight: 500;">{active_module}</span>
+                </div>
             </div>
-            <div style="text-align: right; font-family: 'Consolas', monospace; font-size: 12px; color: #94a3b8;">
-                <div style="color: #00f2fe; font-weight: 600;">LIVE SYSTEM MONITOR</div>
-                <div>{utc_now}</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #10b981; font-weight: 600;">
+                    ● 100% Offline & Private
+                </div>
+                <div style="font-family: 'Consolas', monospace; font-size: 12px; color: #64748b;">
+                    {utc_now}
+                </div>
             </div>
         </div>
     </div>
