@@ -73,7 +73,8 @@ def format_bytes(size):
 # Sidebar Navigation
 st.sidebar.markdown("### 🎛️ NAVIGATION")
 
-MODULE_LIST = [
+# Master list of all supported modules
+ALL_MODULES = [
     "🛡️ Command Center Dashboard",
     "📊 Tabular Datasets (CSV/Excel)",
     "📄 Documents & Code (PDF/DOCX/TXT/Code)",
@@ -85,6 +86,16 @@ MODULE_LIST = [
     "🧬 Synthetic Data Generator",
     "📜 Scan Audit History & Logs"
 ]
+
+# Hidden modules for clean streamlined view (backend code remains intact)
+HIDDEN_MODULES = {
+    "🧬 Synthetic Data Generator",
+    "📜 Scan Audit History & Logs",
+    "🎙️ Audio/Video Transcripts & Subtitles (.srt/.vtt)",
+    "🗄️ Relational Databases (SQLite / SQL)",
+}
+
+MODULE_LIST = [m for m in ALL_MODULES if m not in HIDDEN_MODULES]
 
 mode = st.sidebar.radio(
     "Select Operating Module:",
